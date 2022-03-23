@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
-
+set -x
 # $1: nj
 # $2: decode directory name
 # $3  working directory path
@@ -15,7 +15,7 @@ utils/mkgraph.sh $lang_dir $model_dir $graph_dir >> $log_dir/output.log 2> $log_
 rm -rf $model_dir/$decode_dir
 mkdir -p $model_dir/$decode_dir/scoring
 #echo "Executing steps/decode.sh --cmd $decode_cmd  --nj $nj --skip-scoring true $graph_dir $data_dir $model_dir/$decode_dir"
-steps/decode.sh --cmd $decode_cmd  --nj $nj --skip-scoring true $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
+steps/decode.sh --cmd "run.pl"  --nj $nj --skip-scoring true $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
 #echo "Making 10.hyp from lattice"
 (lattice-scale --inv-acoustic-scale=10 "ark:gunzip -c $model_dir/$decode_dir/lat.*.gz|" ark:- 2> $log_dir/err.log || exit 1)  | \
         (lattice-add-penalty --word-ins-penalty=10.0 ark:- ark:- 2> $log_dir/err.log || exit 1) | \
@@ -26,16 +26,16 @@ steps/decode.sh --cmd $decode_cmd  --nj $nj --skip-scoring true $graph_dir $data
 #echo "Creating word_alignment.ctm"
 (lattice-add-penalty --word-ins-penalty=10.0 ark:"gunzip -c $model_dir/$decode_dir/lat.*.gz|" ark:- 2> $log_dir/err.log || exit 1)| \
 (lattice-1best  --acoustic-scale=0.1 ark:- ark:- 2> $log_dir/err.log || exit 1) | \
-(lattice-align-words data/lang_test/phones/word_boundary.int $model_dir/final.mdl ark:- ark:- 2> $log_dir/err.log || exit 1) | \
+(lattice-align-words $lang_dir/phones/word_boundary.int $model_dir/final.mdl ark:- ark:- 2> $log_dir/err.log || exit 1) | \
 (nbest-to-ctm ark:- - 2> $log_dir/err.log || exit 1) | sed 's/segment_//g' | sort -s -k 1,1n | sed 's/^/segment_/g' > $working_dir/word_alignment.ctm
 # note: multiple spaces before key makes sclite fail and number of lines should match 
 #echo "RM format for  $working_dir/hypothesis.tra"
 (cat $working_dir/hypothesis.tra 2> $log_dir/err.log || exit 1) | sed 's/$/ (key_1)\n/' | tr -s ' '> $working_dir/hypothesis.tra_rm
 #echo "RM format for $working_dir/text_ints"
-(cat $working_dir/text_ints 2> $log_dir/err.log || exit 1) | sed 's/$/ (key_1)/' | tr -s ' ' > $working_dir/text_ints_rm
+(cat $working_dir/text_ints 2> $log_dir/err.log || exit 1) | sed 's/$/ (key_1)\n/' | tr -s ' ' > $working_dir/text_ints_rm
 #echo "Text-Text alignment using sclite"
-sclite -p -i 'rm' -r $working_dir/text_ints_rm -h $working_dir/hypothesis.tra_rm > $working_dir/ref_and_hyp 2> $log_dir/err.log || (echo "sclite failure" && exit 1)
-sclite -p -i 'rm' -r $working_dir/hypothesis.tra_rm -h $working_dir/text_ints_rm > $working_dir/hyp_and_ref 2> $log_dir/err.log || (echo "sclite failure" && exit 1)
+/home/theokouz/kaldi/tools/sctk-20159b5/bin/sclite -p -i 'rm' -r $working_dir/text_ints_rm -h $working_dir/hypothesis.tra_rm > $working_dir/ref_and_hyp 2> $log_dir/err.log || (echo "sclite failure" && exit 1)
+/home/theokouz/kaldi/tools/sctk-20159b5/bin/sclite -p -i 'rm' -r $working_dir/hypothesis.tra_rm -h $working_dir/text_ints_rm > $working_dir/hyp_and_ref 2> $log_dir/err.log || (echo "sclite failure" && exit 1)
 
 # clean up ref_and_hyp & hyp_and_ref to have only C,I,D,S characters
 (cat $working_dir/ref_and_hyp 2> $log_dir/err.log || exit 1) | sed '/[<"]/d' | sed '/^\n/d' | tr '\n' ' ' | sed 's/ //g'  \

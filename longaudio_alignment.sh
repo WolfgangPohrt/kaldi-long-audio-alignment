@@ -6,41 +6,35 @@
 . ./cmd.sh
 . ./longaudio_vars.sh
 set -e
-stage=0
+stage=2
 working_dir=data/working_dir
 new_dir=${data_dir}_segmented
 create_dir="false"
-while [[ $# -gt 1 ]]
-do
-	arg=$1
-	case $arg in
-		--working-dir)
-			working_dir=$2
-			shift
-			shift
-			;;
-		--stage)
-			stage=$2
-			shift
-			shift
-			;;
-		--create-dir)
-			create_dir=$2
-			shift
-			shift
-			;;			
-	esac
-done;
+
+audio=$1
+text=$2
+data_dir=$3
+create_dir=$4
+working_dir=$data_dir/working_dir
+
+mkdir -p $data_dir
+
+# create wav.scp and text
+echo "key_1 $audio" > $data_dir/wav.scp
+cat $text > $data_dir/text
+sed -i -e 's/^/key_1 /' $data_dir/text
+
+
 segment_store=$working_dir/segments_store
 log_dir=$working_dir/log
 mkdir -p $working_dir
 mkdir -p $log_dir
 mkdir -p $segment_store
-
+set -x
 echo "Taking backup of $data_dir to ${data_dir}.laa.bkp"
 rm -rf ${data_dir}.laa.bkp || echo "" > $log_dir/output.log 2>$log_dir/err.log || exit 1
 cp -r $data_dir ${data_dir}.laa.bkp > $log_dir/output.log 2>$log_dir/err.log || exit
-echo "Params: working_dir=$working_dir stage=$stage log directory=$log_dir"
+echo "Params: working_dir=$working_dir log directory=$log_dir"
 
 if [ $stage -ge 1 ]; then
 # mfcc and cmvn
@@ -49,7 +43,6 @@ if [ $stage -ge 1 ]; then
 echo "Making feats"
 scripts/make-feats.sh $data_dir/wav.scp $working_dir $log_dir 2> $log_dir/err.log
 # VAD and segmentation based on VAD
-#head -1 $data_dir/feats.scp
 echo "Doing VAD"
 (compute-vad scp:$data_dir/feats.scp ark,t:- 2> $log_dir/err.log || exit 1) | cut -d' ' -f2- | tr -d ' '|tr -d '[' | tr -d ']'  > $working_dir/vad.ark || exit 1
 echo "Making segments using VAD"
@@ -58,7 +51,7 @@ echo "Making segments using VAD"
 cp $data_dir/segments $working_dir/segments 2> $log_dir/err.log || exit 1
 echo "Computing features for segments obtained using VAD"
 scripts/make-feats.sh $data_dir/segments $working_dir $log_dir 2>${log_dir}/err.log
-# prepare text file
+# prepare text fileS
 echo "Preparing text files: text_actual"
 (cat $data_dir/text_1 2> $log_dir/err.log || exit 1) | cut -d' ' -f2- | sed 's/^ \+//g' | sed 's/ \+$//g' | tr -s ' ' > $working_dir/text_actual 
 echo "Preparing text files: lm_text"
@@ -139,8 +132,8 @@ fi
 rm -r $model_dir/decode_* || echo ""
 #echo "converting integer ids to words in"
 utils/int2sym.pl -f 1 $lang_dir/words.txt  $working_dir/WORD_TIMINGS > $working_dir/WORD_TIMINGS.words
-rm -rf $data_dir
-mv ${data_dir}.laa.bkp $data_dir
+cat $working_dir/WORD_TIMINGS.words > alignment.final
+
 if [ $create_dir == "true" ]; then
 	echo "Creating $new_dir"
 	mkdir -p $new_dir
@@ -151,5 +144,6 @@ if [ $create_dir == "true" ]; then
 	cut -d ' ' -f1 $new_dir/segments | sed "s/$/ $x/g" > $new_dir/utt2spk
 	cut -d ' ' -f1 $new_dir/segments | sed "s/^/$x /g" > $new_dir/spk2utt
 fi
-touch $new_dir/.done
+rm -rf $data_dir
+mv ${data_dir}.laa.bkp $data_dir
 echo 'Finished successfully'

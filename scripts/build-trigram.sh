@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
-
+set -x
 . ./path.sh
 . ./longaudio_vars.sh
 working_dir=$1
