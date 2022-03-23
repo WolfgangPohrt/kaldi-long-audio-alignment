@@ -2,9 +2,7 @@
 
 # Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
 set -x
-# $1: nj
-# $2: decode directory name
-# $3  working directory path
+
 . ./longaudio_vars.sh
 nj=$1
 decode_dir=$2
@@ -15,7 +13,8 @@ utils/mkgraph.sh $lang_dir $model_dir $graph_dir >> $log_dir/output.log 2> $log_
 rm -rf $model_dir/$decode_dir
 mkdir -p $model_dir/$decode_dir/scoring
 #echo "Executing steps/decode.sh --cmd $decode_cmd  --nj $nj --skip-scoring true $graph_dir $data_dir $model_dir/$decode_dir"
-steps/decode.sh --cmd "run.pl"  --nj $nj --skip-scoring true $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
+# steps/decode.sh --cmd "run.pl"  --nj $nj --skip-scoring true $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
+steps/decode_fmllr.sh --cmd "run.pl --mem 2G"  $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
 #echo "Making 10.hyp from lattice"
 (lattice-scale --inv-acoustic-scale=10 "ark:gunzip -c $model_dir/$decode_dir/lat.*.gz|" ark:- 2> $log_dir/err.log || exit 1)  | \
         (lattice-add-penalty --word-ins-penalty=10.0 ark:- ark:- 2> $log_dir/err.log || exit 1) | \
