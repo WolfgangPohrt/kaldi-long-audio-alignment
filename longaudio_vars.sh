@@ -5,5 +5,5 @@ data_dir=data
 lang_dir=lang
 model_dir=tri3b_map_aug
 graph_dir=$model_dir/graph
-island_length=5
+island_length=3
 num_iters=3

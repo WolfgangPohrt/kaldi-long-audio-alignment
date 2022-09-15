@@ -37,7 +37,6 @@ echo "Taking backup of $data_dir to ${data_dir}.laa.bkp"
 #cp -r $data_dir ${data_dir}.laa.bkp > $log_dir/output.log 2>$log_dir/err.log || exit 1
 echo "Params: working_dir=$working_dir log directory=$log_dir"
 
-if [ $stage -ge 1 ]; then
 # mfcc and cmvn
 (rm $data_dir/segments || echo "") >> $log_dir/output.log 2>&1
 (mv $data_dir/text $data_dir/text_1 > $log_dir/output.log 2>$log_dir/err.log) || exit 1
@@ -48,10 +47,9 @@ echo "Doing VAD"
 ./bin/vad -i $audio -m bin/MattModel.bin -o $working_dir/vad.tmp 2> $log_dir/err.log || exit 1
 awk '{print $2}' $working_dir/vad.tmp | tr -d '\n' > $working_dir/vad.ark 
 
-
-
-
+# This uses Kaldi's VAD.
 # (compute-vad scp:$data_dir/feats.scp ark,t:- 2> $log_dir/err.log || exit 1) | cut -d' ' -f2- | tr -d ' '|tr -d '[' | tr -d ']'  > $working_dir/vad.ark || exit 1
+
 echo "Making segments using VAD"
 # split_vad.py considers even one frame of 0 (silence) as potential breakpoint. But you might want to change it
 (python scripts/split_vad.py $working_dir/vad.ark  2> ${log_dir}/err.log || exit 1) | sort > $data_dir/segments 
@@ -83,26 +81,15 @@ text_end_index=$((num_text_words-1))
 audio_duration=`(wav-to-duration --read-entire-file scp:$data_dir/wav.scp ark,t:- 2>> $log_dir/output.log) | cut -d' ' -f2`
 
 
-scripts/make-status-and-word-timings.sh $working_dir $working_dir 0 $text_end_index 0.00 $audio_duration $log_dir 2> $log_dir/err.log || (echo "Failed: make-status-and-word-timings.sh" && exit 1)
-fi
+scripts/make-status-and-word-timings.sh $working_dir $working_dir 0 $text_end_index 0.00 $audio_duration $log_dir 2> $log_dir/err.log 
 
 
-exit 1;
 
 
 if [ $stage -ge 2 ]; then 
 segment_id=`wc -l $working_dir/segments | cut -d' ' -f1`
 for x in `seq 1 $((num_iters-1))`;do
-#	echo "segment id is $segment_id"
-	# grep PENDING from status file
-	# for each PENDING entry, do; tc of segment_id
-	# make segment file, utt2spk, spk2utt
-	# make lm
-	# mkgraph
-	# decode
-	# get the decoded output and put in the TEMPSTATUS file
-	# merge TEMPSTATUS and STATUS
-	# repeat
+
 	echo "Doing iteration ${x}. Starting segment id: $segment_id"
 	while read y;do
 		echo $y >> $log_dir/output.log
@@ -130,24 +117,32 @@ for x in `seq 1 $((num_iters-1))`;do
 			scripts/build-trigram.sh $segment_store/${segment_id} $segment_store/${segment_id}/lm_text >> $log_dir/output.log 2> $log_dir/err.log || exit 1
 		fi
 		scripts/build-graph-decode-hyp.sh 1 decode_${segment_id} $segment_store/${segment_id} $log_dir 2> $log_dir/err.log || exit 1
+
 		scripts/make-status-and-word-timings.sh $working_dir $segment_store/${segment_id} \
 			$word_begin_index $word_end_index $time_begin $time_end $log_dir 2> $log_dir/err.log || (echo "Failed: make-status-and-word-timings.sh" && exit 1)
+
 
 		cat $segment_store/${segment_id}/ALIGNMENT_STATUS >> $working_dir/ALIGNMENT_STATUS.working.iter${x} # this file is appended with ALIGNMENT_STATUS of each segment of the iteration.
 		segment_id=$((segment_id+1))
 		done < <(cat $working_dir/ALIGNMENT_STATUS | grep PENDING)
-	cp $working_dir/ALIGNMENT_STATUS $working_dir/ALIGNMENT_STATUS.iter$((x-1))
-	cat $working_dir/ALIGNMENT_STATUS | grep 'DONE' > $working_dir/ALIGNMENT_STATUS.tmp
-	cat $working_dir/ALIGNMENT_STATUS.working.iter${x} >> $working_dir/ALIGNMENT_STATUS.tmp
-	cat $working_dir/ALIGNMENT_STATUS.tmp | sort -s -k 1,1n > $working_dir/ALIGNMENT_STATUS.tmp2
-	# clean up the alignment file so that ALIGNMENT_STATUS has DONE and PENDING in alternate lines
-	echo "Cleaning up Alignment Status" >> $log_dir/output.log
-	python scripts/cleanup_status.py $working_dir/ALIGNMENT_STATUS.tmp2 > $working_dir/ALIGNMENT_STATUS
-	rm $working_dir/ALIGNMENT_STATUS.tmp*
-	rm $working_dir/ALIGNMENT_STATUS.working.iter${x} # might need for debugging
+	
+
+	if [[ $(grep PENDING $working_dir/ALIGNMENT_STATUS) ]]; then
+		cp $working_dir/ALIGNMENT_STATUS $working_dir/ALIGNMENT_STATUS.iter$((x-1))
+		cat $working_dir/ALIGNMENT_STATUS | grep 'DONE' > $working_dir/ALIGNMENT_STATUS.tmp
+		cat $working_dir/ALIGNMENT_STATUS.working.iter${x} >> $working_dir/ALIGNMENT_STATUS.tmp
+		cat $working_dir/ALIGNMENT_STATUS.tmp | sort -s -k 1,1n > $working_dir/ALIGNMENT_STATUS.tmp2
+		# clean up the alignment file so that ALIGNMENT_STATUS has DONE and PENDING in alternate lines
+		echo "Cleaning up Alignment Status" >> $log_dir/output.log
+		python scripts/cleanup_status.py $working_dir/ALIGNMENT_STATUS.tmp2 > $working_dir/ALIGNMENT_STATUS
+		rm $working_dir/ALIGNMENT_STATUS.tmp*
+		rm $working_dir/ALIGNMENT_STATUS.working.iter${x} # might need for debugging
+	else
+		echo "Finished successfully"
+	fi
 done;
 fi
-rm -r $model_dir/decode_* || echo ""
+# rm -r $model_dir/decode_* || echo ""
 #echo "converting integer ids to words in"
 utils/int2sym.pl -f 1 $lang_dir/words.txt  $working_dir/WORD_TIMINGS > $working_dir/WORD_TIMINGS.words
 cat $working_dir/WORD_TIMINGS.words > alignment.final
@@ -162,6 +157,5 @@ if [ $create_dir == "true" ]; then
 	cut -d ' ' -f1 $new_dir/segments | sed "s/$/ $x/g" > $new_dir/utt2spk
 	cut -d ' ' -f1 $new_dir/segments | sed "s/^/$x /g" > $new_dir/spk2utt
 fi
-rm -rf $data_dir
-mv ${data_dir}.laa.bkp $data_dir
-echo 'Finished successfully'
+# rm -rf $data_dir
+# echo 'Finished successfully'

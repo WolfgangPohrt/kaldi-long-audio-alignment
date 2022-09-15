@@ -43,7 +43,7 @@ sclite -p -i 'rm' -r $working_dir/hypothesis.tra_rm -h $working_dir/text_ints_rm
         > $working_dir/hyp_and_ref.final
 
 # word indexes for matching segments
-#echo "Obtaining aligned word indices in both reference and hypothesis"
+echo "Obtaining aligned word indices in both reference and hypothesis"
 python scripts/correct_segment.py $working_dir/ref_and_hyp.final $island_length > \
         $working_dir/ref_and_hyp_match 2> $log_dir/err.log || exit 1
 python scripts/correct_segment.py $working_dir/hyp_and_ref.final $island_length > \

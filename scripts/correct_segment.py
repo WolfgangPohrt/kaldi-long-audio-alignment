@@ -6,10 +6,17 @@ import sys
 
 filename=sys.argv[1]
 islandLength=int(sys.argv[2])
-island='C'*islandLength
 
 with open(filename,'r') as f:
 	contents=f.read().strip()
+
+if len(contents) < islandLength:
+	island = 'C'
+else:
+	island='C'*islandLength
+
+
+
 
 strIndex=0
 list=['D','I','S']

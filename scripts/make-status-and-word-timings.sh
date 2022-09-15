@@ -14,6 +14,8 @@ python scripts/islands_to_status.py $working_dir/ref_and_hyp_match $working_dir/
         $working_dir/text_ints $working_dir/word_alignment.ctm $working_dir/segments \
         $text_begin_index $text_end_index $audio_begin_time $audio_end_time > $working_dir/ALIGNMENT_STATUS 2> $log_dir/err.log
 
+
+
 # save timing information for each aligned word
 echo "Creating word timing" >> $log_dir/output.log
 cp $main_working_dir/WORD_TIMINGS $main_working_dir/WORD_TIMINGS.tmp
