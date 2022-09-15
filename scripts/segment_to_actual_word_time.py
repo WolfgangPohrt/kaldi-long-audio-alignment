@@ -47,12 +47,18 @@ for s in segments:
 assert len(ref_and_hyp_match)==len(hyp_and_ref_match)
 
 for k,l in zip(ref_and_hyp_match, hyp_and_ref_match):
-	text_start, text_end=map(int,k.split(' '))
-	ctm_start, ctm_end=map(int, l.split(' '))
+	
+	text_start, text_end = k.split(',')
+	text_start, text_end = int(text_start.replace('(','')), int(text_end.replace(')',''))
+	ctm_start, ctm_end = l.split(',')
+	ctm_start, ctm_end = int(ctm_start.replace('(','')), int(ctm_end.replace(')',''))
+	######## same deal as island_to_status ####
+	# text_start, text_end=map(int,k.split(' '))
+	# ctm_start, ctm_end=map(int, l.split(' '))
 	try:
 		assert ctm_end - ctm_start == text_end - text_start
 	except AssertionError:
-		print 'the number of words in the matched segments are not equal:', k,l
+		print('the number of words in the matched segments are not equal:', k,l)
 		exit(1)
 	while text_start<=text_end:
 		ctm_segment, _, ctm_begin_time, ctm_duration, word=ctm[ctm_start].strip().split()
@@ -60,9 +66,9 @@ for k,l in zip(ref_and_hyp_match, hyp_and_ref_match):
 		try:
 			assert word == entry.word
 		except AssertionError:
-			print 'words in correct segments are not matching', k, l
-			print 'words ctm, text', word, entry.word
-			print 'arguments:', sys.argv
+			print('words in correct segments are not matching', k, l)
+			print('words ctm, text', word, entry.word)
+			print('arguments:', sys.argv)
 			exit(1)
 		entry.begin_time=float(segments_time_map[ctm_segment])+float(ctm_begin_time)
 		entry.end_time=entry.begin_time+float(ctm_duration)

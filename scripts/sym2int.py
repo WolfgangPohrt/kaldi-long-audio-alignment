@@ -20,7 +20,7 @@ for line in symtab_contents:
 	try:
 		assert len(line) == 2
 	except AssertionError:
-		print 'number of words in line', unicode(line).encode('utf-8'), 'is not 2'
+		print('number of words in line', unicode(line).encode('utf-8'), 'is not 2')
 		exit(1)
 	sym2int_dict[line[0]]=line[1]
 
@@ -35,4 +35,4 @@ for line in input_contents:
 	output_contents.append(out_str)
 
 for line in output_contents:
-	print line.strip()
+	print(line.strip())

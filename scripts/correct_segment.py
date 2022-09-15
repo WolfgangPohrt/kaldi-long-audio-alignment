@@ -19,5 +19,5 @@ while strIndex<len(contents):
 	except ValueError:
 		break
 	strIndex=curr+min(contents[curr:].index(i)  if i in contents[curr:] else len(contents)-curr for i in list)
-	print curr-contents[:curr].count('I'),strIndex-1-contents[:strIndex-1].count('I')
+	print(curr-contents[:curr].count('I'),strIndex-1-contents[:strIndex-1].count('I'))
 	

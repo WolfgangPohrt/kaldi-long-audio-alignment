@@ -6,10 +6,11 @@
 . ./cmd.sh
 . ./longaudio_vars.sh
 set -e
+set -x
 stage=2
-working_dir=data/working_dir
-new_dir=${data_dir}_segmented
-create_dir="false"
+# working_dir=data/working_dir
+# new_dir=${data_dir}_segmented
+# create_dir="false"
 
 audio=$1
 text=$2
@@ -32,8 +33,8 @@ mkdir -p $log_dir
 mkdir -p $segment_store
 set -x
 echo "Taking backup of $data_dir to ${data_dir}.laa.bkp"
-rm -rf ${data_dir}.laa.bkp || echo "" > $log_dir/output.log 2>$log_dir/err.log || exit 1
-cp -r $data_dir ${data_dir}.laa.bkp > $log_dir/output.log 2>$log_dir/err.log || exit
+#rm -rf ${data_dir}.laa.bkp || echo "" > $log_dir/output.log 2>$log_dir/err.log || exit 1
+#cp -r $data_dir ${data_dir}.laa.bkp > $log_dir/output.log 2>$log_dir/err.log || exit 1
 echo "Params: working_dir=$working_dir log directory=$log_dir"
 
 if [ $stage -ge 1 ]; then
@@ -47,7 +48,7 @@ echo "Doing VAD"
 (compute-vad scp:$data_dir/feats.scp ark,t:- 2> $log_dir/err.log || exit 1) | cut -d' ' -f2- | tr -d ' '|tr -d '[' | tr -d ']'  > $working_dir/vad.ark || exit 1
 echo "Making segments using VAD"
 # split_vad.py considers even one frame of 0 (silence) as potential breakpoint. But you might want to change it
-(scripts/split_vad.py $working_dir/vad.ark  2> ${log_dir}/err.log || exit 1) | sort > $data_dir/segments 
+(python scripts/split_vad.py $working_dir/vad.ark  2> ${log_dir}/err.log || exit 1) | sort > $data_dir/segments 
 cp $data_dir/segments $working_dir/segments 2> $log_dir/err.log || exit 1
 echo "Computing features for segments obtained using VAD"
 scripts/make-feats.sh $data_dir/segments $working_dir $log_dir 2>${log_dir}/err.log
@@ -57,7 +58,7 @@ echo "Preparing text files: text_actual"
 echo "Preparing text files: lm_text"
 (cat $working_dir/text_actual 2> $log_dir/err.log || exit 1) | sed -e 's:^:<s> :' -e 's:$: </s>:' > $working_dir/lm_text
 echo "Preparing text files: initializing WORD_TIMINGS file with all -1 -1"
-(scripts/sym2int.py ${lang_dir}/words.txt  $working_dir/text_actual 2> $log_dir/err.log || exit 1) | tr ' ' '\n' | sed 's/$/ -1 -1/g' > $working_dir/WORD_TIMINGS
+(python scripts/sym2int.py ${lang_dir}/words.txt  $working_dir/text_actual 2> $log_dir/err.log || exit 1) | tr ' ' '\n' | sed 's/$/ -1 -1/g' > $working_dir/WORD_TIMINGS
 echo "Preparation of text files over"
 echo "Preparing trigram LM"
 scripts/build-trigram.sh $working_dir $working_dir/lm_text >> $log_dir/output.log 2> $log_dir/err.log || exit 1
@@ -71,6 +72,8 @@ echo "iter 0 decode over"
 num_text_words=`wc -w $working_dir/text_ints | cut -d' ' -f1`
 text_end_index=$((num_text_words-1))
 audio_duration=`(wav-to-duration --read-entire-file scp:$data_dir/wav.scp ark,t:- 2>> $log_dir/output.log) | cut -d' ' -f2`
+
+
 scripts/make-status-and-word-timings.sh $working_dir $working_dir 0 $text_end_index 0.00 $audio_duration $log_dir 2> $log_dir/err.log || (echo "Failed: make-status-and-word-timings.sh" && exit 1)
 fi
 if [ $stage -ge 2 ]; then 
@@ -115,6 +118,7 @@ for x in `seq 1 $((num_iters-1))`;do
 		scripts/build-graph-decode-hyp.sh 1 decode_${segment_id} $segment_store/${segment_id} $log_dir 2> $log_dir/err.log || exit 1
 		scripts/make-status-and-word-timings.sh $working_dir $segment_store/${segment_id} \
 			$word_begin_index $word_end_index $time_begin $time_end $log_dir 2> $log_dir/err.log || (echo "Failed: make-status-and-word-timings.sh" && exit 1)
+
 		cat $segment_store/${segment_id}/ALIGNMENT_STATUS >> $working_dir/ALIGNMENT_STATUS.working.iter${x} # this file is appended with ALIGNMENT_STATUS of each segment of the iteration.
 		segment_id=$((segment_id+1))
 		done < <(cat $working_dir/ALIGNMENT_STATUS | grep PENDING)
@@ -124,7 +128,7 @@ for x in `seq 1 $((num_iters-1))`;do
 	cat $working_dir/ALIGNMENT_STATUS.tmp | sort -s -k 1,1n > $working_dir/ALIGNMENT_STATUS.tmp2
 	# clean up the alignment file so that ALIGNMENT_STATUS has DONE and PENDING in alternate lines
 	echo "Cleaning up Alignment Status" >> $log_dir/output.log
-	scripts/cleanup_status.py $working_dir/ALIGNMENT_STATUS.tmp2 > $working_dir/ALIGNMENT_STATUS
+	python scripts/cleanup_status.py $working_dir/ALIGNMENT_STATUS.tmp2 > $working_dir/ALIGNMENT_STATUS
 	rm $working_dir/ALIGNMENT_STATUS.tmp*
 	rm $working_dir/ALIGNMENT_STATUS.working.iter${x} # might need for debugging
 done;

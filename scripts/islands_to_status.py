@@ -53,9 +53,19 @@ if len(res_ref_hyp_contents)==0:
 	entryManager.add_entry(Entry(audio_initial_time, audio_final_time, 'PENDING', text_initial_index, text_final_index))
 for k in range(len(res_ref_hyp_contents)):#,res_hyp_ref_contents):
 	i,j=res_ref_hyp_contents[k],res_hyp_ref_contents[k]
-	#print i.strip(),j.strip()
-	text_start_index, text_end_index = map(int, i.split(' '))
-	ctm_start_index, ctm_end_index = map(int, j.split(' '))
+
+
+	############### is this what he ment to do????? ##########
+	text_start_index, text_end_index = i.rstrip().split(',')
+	ctm_start_index, ctm_end_index = j.rstrip().split(',')
+	text_start_index, text_end_index = int(text_start_index.replace('(', '')), int(text_end_index.replace(')', ''))
+	ctm_start_index, ctm_end_index = int(ctm_start_index.replace('(', '')), int(ctm_end_index.replace(')', ''))
+    ######################V original code V###################
+
+	######## uncomment or mabye not --> we'll see ############
+	# text_start_index, text_end_index = map(int, i.split(' '))
+	# ctm_start_index, ctm_end_index = map(int, j.split(' '))
+	# print(ctm_contents)
 	ctm_begin_segment_id=ctm_contents[ctm_start_index].strip().split(' ')[0]
 	ctm_end_segment_id=ctm_contents[ctm_end_index].strip().split(' ')[0]
 
@@ -74,18 +84,18 @@ for k in range(len(res_ref_hyp_contents)):#,res_hyp_ref_contents):
 	try:
 		assert ctm_word_begin.strip()==text_word_begin.strip()
 	except AssertionError:
-		print "Assertion Error in line:",(k+1)," begin word did not match"
-		print "res_ref_hyp:", i
-		print "res_hyp_ref:", j
-		print "ctm_word: ", ctm_word_begin, "text_word: ", text_word_begin
-		print sys.argv
+		print ("Assertion Error in line:",(k+1)," begin word did not match")
+		print ("res_ref_hyp:", i)
+		print ("res_hyp_ref:", j)
+		print ("ctm_word: ", ctm_word_begin, "text_word: ", text_word_begin)
+		print (sys.argv)
 		exit(1)
 	try:
 		assert ctm_word_end.strip() == text_word_end.strip()
 	except AssertionError:
-		print "Assertion Error in line:",(k+1)," end word did not match"
-		print "ctm_word: ", ctm_word_end, "text_word: ", text_word_end
-		print sys.argv
+		print ("Assertion Error in line:",(k+1)," end word did not match")
+		print ("ctm_word: ", ctm_word_end, "text_word: ", text_word_end)
+		print (sys.argv)
 		exit(1)
 	if(make_complete_status and k==0):
 		# if first word has not been decoded
@@ -93,9 +103,18 @@ for k in range(len(res_ref_hyp_contents)):#,res_hyp_ref_contents):
 			entryManager.add_entry(Entry(audio_initial_time, ctm_time_begin, 'PENDING', text_initial_index, (text_start_index-1)))
 	entryManager.add_entry(Entry(ctm_time_begin, ctm_time_end, 'DONE', text_start_index, text_end_index))
 	if(make_complete_status and (k+1)<len(res_ref_hyp_contents)):
-		next_text_start_index,_=map(int, res_ref_hyp_contents[k+1].split(' '))
+		next_text_start_index, _ = res_ref_hyp_contents[k+1].rstrip().split(',')
+		next_text_start_index = int(next_text_start_index.replace('(', ''))
+
+		############ same deal with lines 61... ################
+		# next_text_start_index,_=map(int, res_ref_hyp_contents[k+1].split(' '))
 		next_text_start_index=next_text_start_index+text_initial_index
-		next_ctm_start_index,_=map(int, res_hyp_ref_contents[k+1].split(' '))
+		########################################################
+		next_ctm_start_index, _ = res_hyp_ref_contents[k+1].rstrip().split(',')
+		next_ctm_start_index = int(next_ctm_start_index.replace('(', ''))
+		# next_ctm_start_index,_=map(int, res_hyp_ref_contents[k+1].split(' '))
+		############# Original Code commented out ##############
+		
 		next_ctm_begin_segment_id=ctm_contents[next_ctm_start_index].strip().split(' ')[0]
 		ctm_next_begin_time=float(ctm_contents[next_ctm_start_index].strip().split(' ')[2])+float(segments_time_map[next_ctm_begin_segment_id])
 		if((text_end_index+1)!=next_text_start_index):

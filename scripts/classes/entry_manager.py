@@ -1,6 +1,19 @@
 # Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
 
-from entry import Entry
+# from entry import Entry
+
+class Entry:
+	def __init__(self, begin_time, end_time, status, word_begin, word_end):
+		self.begin_time=float(begin_time)
+		self.end_time=float(end_time)
+		self.status=status
+		self.word_begin=int(word_begin)
+		self.word_end=int(word_end)
+	
+	
+
+
+
 class EntryManager:
 	__statuses__ = ['PENDING','DONE']
 	def __init__(self):
@@ -22,7 +35,7 @@ class EntryManager:
 			try:
 				assert (self.entries[-1].word_end+1)==entry.word_begin
 			except AssertionError:
-				print "Words are not continous in ",self.entries[-1]," and ", entry
+				print ("Words are not continous in ",self.entries[-1]," and ", entry)
 				exit(1)
 			# check if to be merged. if not, just insert.
 			if(entry.begin_time!=entry.end_time and self.entries[-1].status!=entry.status and (entry.end_time-entry.begin_time)>=0.1):
@@ -45,4 +58,4 @@ class EntryManager:
 	def print_entries(self):
 		#print the entries
 		for e in self.entries:
-			print e.begin_time, e.end_time, e.status, e.word_begin, e.word_end
+			print('{} {} {} {} {}'.format(e.begin_time, e.end_time, e.status, e.word_begin, e.word_end))
