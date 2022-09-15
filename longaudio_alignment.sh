@@ -45,10 +45,19 @@ echo "Making feats"
 scripts/make-feats.sh $data_dir/wav.scp $working_dir $log_dir 2> $log_dir/err.log
 # VAD and segmentation based on VAD
 echo "Doing VAD"
-(compute-vad scp:$data_dir/feats.scp ark,t:- 2> $log_dir/err.log || exit 1) | cut -d' ' -f2- | tr -d ' '|tr -d '[' | tr -d ']'  > $working_dir/vad.ark || exit 1
+./bin/vad -i $audio -m bin/MattModel.bin -o $working_dir/vad.tmp 2> $log_dir/err.log || exit 1
+awk '{print $2}' $working_dir/vad.tmp | tr -d '\n' > $working_dir/vad.ark 
+
+
+
+
+# (compute-vad scp:$data_dir/feats.scp ark,t:- 2> $log_dir/err.log || exit 1) | cut -d' ' -f2- | tr -d ' '|tr -d '[' | tr -d ']'  > $working_dir/vad.ark || exit 1
 echo "Making segments using VAD"
 # split_vad.py considers even one frame of 0 (silence) as potential breakpoint. But you might want to change it
 (python scripts/split_vad.py $working_dir/vad.ark  2> ${log_dir}/err.log || exit 1) | sort > $data_dir/segments 
+
+
+
 cp $data_dir/segments $working_dir/segments 2> $log_dir/err.log || exit 1
 echo "Computing features for segments obtained using VAD"
 scripts/make-feats.sh $data_dir/segments $working_dir $log_dir 2>${log_dir}/err.log
@@ -76,6 +85,11 @@ audio_duration=`(wav-to-duration --read-entire-file scp:$data_dir/wav.scp ark,t:
 
 scripts/make-status-and-word-timings.sh $working_dir $working_dir 0 $text_end_index 0.00 $audio_duration $log_dir 2> $log_dir/err.log || (echo "Failed: make-status-and-word-timings.sh" && exit 1)
 fi
+
+
+exit 1;
+
+
 if [ $stage -ge 2 ]; then 
 segment_id=`wc -l $working_dir/segments | cut -d' ' -f1`
 for x in `seq 1 $((num_iters-1))`;do
