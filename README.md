@@ -20,10 +20,14 @@ Performs long audio alignment and optionally appends the segmented data to train
 <h2>Running longaudio_alignment.sh</h2>
 
 **Usage:** longaudio_alignment.sh <audio-path> <transcription-path> <data-dir> <working-dir>
+  
   e.g.:    longaudio_alignment.sh path/to/audio.wav path/to/transcription.txt data data/working_dir"
+  
   Options:
-    --stage <stage>           # Use stage 2 to run the itterative algorith
-    --create_dir (true|false) 		# create segmentd kaldi data directory from the input (defult: false)
+  
+  --stage <stage>           # Use stage 2 to run the itterative algorith
+  
+  --create_dir (true|false) 		# create segmentd kaldi data directory from the input (defult: false)
 
 **Note:** Iterations 0 to n-3 use trigram and iterations n-2 and n-1 are the two passes described in [2] but with a difference. the LM is built only on the exact text which corresponds to the segment rather than from a longer context hence larger deletions are still a problem.
 
