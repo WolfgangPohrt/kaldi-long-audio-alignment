@@ -12,9 +12,6 @@ with codecs.open(input_file_path,'r','utf-8') as f:
 	input_contents=f.readlines()
 
 
-# with open(input_file_path) as f:
-# 	input_contents=f.readlines()
-
 # print(input_contents[0])
 words=input_contents[0].split(' ')
 # print(words)

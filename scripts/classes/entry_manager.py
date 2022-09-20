@@ -32,11 +32,11 @@ class EntryManager:
 			self.entries.append(entry)
 		else:
 			# assert (last word+1) of previous entry and the first word of current entry match
-			try:
-				assert (self.entries[-1].word_end+1)==entry.word_begin
-			except AssertionError:
-				print("Words are not continous in {} and {}".format(self.entries[-1], entry))
-				exit(1)
+			# try:
+			# 	assert (self.entries[-1].word_end+1)==entry.word_begin
+			# except AssertionError:
+			# 	print("Words are not continous in {} and {}".format(self.entries[-1], entry))
+			# 	exit(1)
 			# check if to be merged. if not, just insert.
 			if(entry.begin_time!=entry.end_time and self.entries[-1].status!=entry.status and (entry.end_time-entry.begin_time)>=0.1):
 				self.entries.append(entry)

@@ -2,6 +2,14 @@
 set -x
 . ./path.sh
 . ./longaudio_vars.sh
+
+if [ $# != 3 ]; then
+  echo "Usage: scripts/build-transducer.sh <working_dir> <text> <include-skip>"
+  echo " e.g.: scripts/build-trigram.sh data/working_dir data/working_dir/text_actual true"
+  echo "Description: This script creates a Finite Stete Grammar from the input text and saves it to <lang-dir>."
+  exit 1;
+fi
+
 working_dir=$1
 input_file=$2
 include_skip=$3

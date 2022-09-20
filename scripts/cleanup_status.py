@@ -16,6 +16,7 @@ with open(status_file,'r') as f:
 em=EntryManager()
 uniq_status_file = list(set(status_file_contents))
 uniq_status_file.sort(key=lambda x: float(x.split()[0]))
+# print(uniq_status_file)
 for l in uniq_status_file:
 	l = l.split()
 	em.add_entry(Entry(l[0],l[1],l[2],l[3],l[4]))
