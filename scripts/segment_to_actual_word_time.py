@@ -41,9 +41,9 @@ segments_time_map=dict()
 for w in word_time:
 	word_time_list.append(WordTimeEntry(w))
 for s in segments:
-        s=s.strip().split(' ')
-        segments_time_map[s[0]]=s[2]
-
+	s=s.strip().split(' ')
+	segments_time_map[s[0]]=s[2]
+# print(segments_time_map)
 assert len(ref_and_hyp_match)==len(hyp_and_ref_match)
 
 for k,l in zip(ref_and_hyp_match, hyp_and_ref_match):
@@ -62,6 +62,7 @@ for k,l in zip(ref_and_hyp_match, hyp_and_ref_match):
 		exit(1)
 	while text_start<=text_end:
 		ctm_segment, _, ctm_begin_time, ctm_duration, word=ctm[ctm_start].strip().split()
+		# print(ctm_begin_time)
 		entry = word_time_list[text_start+text_begin_offset]
 		try:
 			assert word == entry.word
@@ -72,6 +73,7 @@ for k,l in zip(ref_and_hyp_match, hyp_and_ref_match):
 			exit(1)
 		entry.begin_time=float(segments_time_map[ctm_segment])+float(ctm_begin_time)
 		entry.end_time=entry.begin_time+float(ctm_duration)
+		# print(entry.begin_time, entry.end_time)
 		text_start+=1
 		ctm_start+=1
 for e in word_time_list:

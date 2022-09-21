@@ -14,6 +14,7 @@ if len(contents) < islandLength:
 	island = 'C'
 else:
 	island='C'*islandLength
+# island='C'*islandLength
 
 
 

@@ -6,7 +6,7 @@
 . ./cmd.sh
 . ./longaudio_vars.sh
 set -e
-# set -x
+set -x
 stage=2
 create_dir=false
 
@@ -150,15 +150,15 @@ for x in `seq 1 $((num_iters-1))`;do
 		cat $working_dir/ALIGNMENT_STATUS.tmp | sort -s -k 1,1n > $working_dir/ALIGNMENT_STATUS.tmp2
 		# clean up the alignment file so that ALIGNMENT_STATUS has DONE and PENDING in alternate lines
 		echo "Cleaning up Alignment Status" >> $log_dir/output.log
-		python scripts/cleanup_status.py $working_dir/ALIGNMENT_STATUS.tmp2 > $working_dir/ALIGNMENT_STATUS
-		rm $working_dir/ALIGNMENT_STATUS.tmp*
-		rm $working_dir/ALIGNMENT_STATUS.working.iter${x} # might need for debugging
+		python scripts/cleanup_status_my.py $working_dir/ALIGNMENT_STATUS.tmp2 > $working_dir/ALIGNMENT_STATUS
+		# rm $working_dir/ALIGNMENT_STATUS.tmp*
+		# rm $working_dir/ALIGNMENT_STATUS.working.iter${x} # might need for debugging
 	else
 		echo "Finished successfully"
 	fi
 done;
 fi
-rm -r $model_dir/decode_* || echo ""
+# rm -r $model_dir/decode_* || echo ""
 echo "Final alignment "
 utils/int2sym.pl -f 1 $lang_dir/words.txt  $working_dir/WORD_TIMINGS | awk '{print $2, $3, $1}' >  $working_dir/WORD_TIMINGS.lab
 

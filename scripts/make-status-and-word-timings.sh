@@ -19,5 +19,14 @@ python scripts/islands_to_status.py $working_dir/ref_and_hyp_match $working_dir/
 # save timing information for each aligned word
 echo "Creating word timing" >> $log_dir/output.log
 cp $main_working_dir/WORD_TIMINGS $main_working_dir/WORD_TIMINGS.tmp
+cp  $main_working_dir/WORD_TIMINGS  $working_dir/WORD_TIMINGS.before
 python scripts/segment_to_actual_word_time.py $main_working_dir/WORD_TIMINGS.tmp $working_dir/word_alignment.ctm $working_dir/segments $working_dir/ref_and_hyp_match $working_dir/hyp_and_ref_match $text_begin_index > $main_working_dir/WORD_TIMINGS
-rm $main_working_dir/WORD_TIMINGS.tmp
+# rm $main_working_dir/WORD_TIMINGS.tmp
+cp  $main_working_dir/WORD_TIMINGS  $working_dir/WORD_TIMINGS.after
+python3 scripts/sanity_check.py $main_working_dir/WORD_TIMINGS  >  $main_working_dir/sanity.tmp
+
+if [[ $(cat $main_working_dir/sanity.tmp) ]]; then
+        utils/int2sym.pl -f 4 lang/words.txt $main_working_dir/sanity.tmp 
+        exit 1;
+fi
+
