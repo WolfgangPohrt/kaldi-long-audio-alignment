@@ -11,9 +11,9 @@ source $KALDI_ROOT/tools/config/common_path.sh
 
 echo "$0 $@"  # Print the command line for logging
 
-if [ $# != 5 ]; then
-  echo "Usage: scripts/build-graph-decode-hyp.sh <num_job> <decode-dir> <working-dir> <log-dir> <use-nnet>"
-  echo " e.g.: scripts/build-graph-decode-hyp.sh 16 decode data/working_dir data/working_dir/log_dir false"
+if [ $# != 6 ]; then
+  echo "Usage: scripts/build-graph-decode-hyp.sh <num_job> <decode-dir> <working-dir> <model-dir> <log-dir> <use-nnet>"
+  echo " e.g.: scripts/build-graph-decode-hyp.sh 16 decode data/working_dir exp/tri3b data/working_dir/log_dir false"
   echo "Description: This script creates a decoding graph, performs decoding using decode_fmllr.sh, and matches hypothesis with reference text using SCLITE."
   exit 1;
 fi
@@ -23,9 +23,9 @@ fi
 nj=$1
 decode_dir=$2
 working_dir=$3
-log_dir=$4
-use_nnet=$5
-
+model_dir=$4
+log_dir=$5
+use_nnet=$6
 
 
 utils/mkgraph.sh $lang_dir $model_dir $graph_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
@@ -40,7 +40,7 @@ if [ $use_nnet == "true" ]; then
                 --online-ivector-dir $iverctor_dir \
                 $graph_dir $data_dir $model_dir/$decode_dir
 else
-        steps/decode_fmllr.sh --cmd "run.pl --mem 2G" --nj 1 --skip_scoring true $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
+        scripts/decode_fmllr.sh --cmd "run.pl --mem 2G" --nj 1 --skip_scoring true $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
 fi
 
 

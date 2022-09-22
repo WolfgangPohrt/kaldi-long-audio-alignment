@@ -1,18 +1,18 @@
 #!/bin/bash
 
 # Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
-set -x
+# set -x
 . ./longaudio_vars.sh
 source_file=$1
 working_dir=$2
 log_dir=$3
 use_nnet=$4
-
+set -x
 
 echo "$0 $@"  # Print the command line for logging
 
 if [ $# != 4 ]; then
-  echo "Usage: scripts/make-feats.sh <data-dir> <working-dirr> <log-dir> <use-nnet>"
+  echo "Usage: scripts/make-feats.sh <data-dir> <working-dir> <log-dir> <use-nnet>"
   echo " e.g.: scripts/scripts/make-feats.sh data data/working_dir data/working_dir/log_dir false"
   echo "Description: This script creates utt2spk, spk2utt and extracts features."
   exit 1;

@@ -36,6 +36,10 @@ text=$2
 data_dir=$3
 working_dir=$4
 
+
+if [ -d "$data_dir" ]; then rm -rf $data_dir; fi
+
+
 mkdir -p $data_dir
 
 # create wav.scp and text
@@ -99,8 +103,10 @@ echo "Trigram LM created using $working_dir/lm_text"
 # build graph and decode
 echo "Executing build-graph-decode-hyp.sh"
 num_lines=`wc -l $data_dir/feats.scp | cut -d' ' -f1` # min of num_lines and 20 for num_jobs
-scripts/build-graph-decode-hyp.sh $(($num_lines>20?20:$num_lines)) decode $working_dir $log_dir $use_nnet 2> $log_dir/err.log || exit 1
+
+scripts/build-graph-decode-hyp.sh $(($num_lines>20?20:$num_lines)) decode $working_dir $model_dir $log_dir $use_nnet 2> $log_dir/err.log || exit 1
 echo "iter 0 decode over"
+
 
 # create a status file which specifies which segments are done and pending and save timing information for each aligned word
 num_text_words=`wc -w $working_dir/text_ints | cut -d' ' -f1`
@@ -108,6 +114,7 @@ text_end_index=$((num_text_words-1))
 audio_duration=`(wav-to-duration --read-entire-file scp:$data_dir/wav.scp ark,t:- 2>> $log_dir/output.log) | cut -d' ' -f2`
 scripts/make-status-and-word-timings.sh $working_dir $working_dir 0 $text_end_index 0.00 $audio_duration $log_dir 2> $log_dir/err.log 
 
+cp -r $model_dir $working_dir/adapted_model_0
 
 
 if [ $stage -ge 2 ]; then 
@@ -139,7 +146,7 @@ for x in `seq 1 $((num_iters-1))`;do
 		else
 			scripts/build-trigram.sh $segment_store/${segment_id} $segment_store/${segment_id}/lm_text >> $log_dir/output.log 2> $log_dir/err.log || exit 1
 		fi
-		scripts/build-graph-decode-hyp.sh 1 decode_${segment_id} $segment_store/${segment_id} $log_dir $use_nnet 2> $log_dir/err.log || exit 1
+		scripts/build-graph-decode-hyp.sh 1 decode_${segment_id} $segment_store/${segment_id} $working_dir/adapted_model_$((x-1)) $log_dir $use_nnet 2> $log_dir/err.log || exit 1
 
 		scripts/make-status-and-word-timings.sh $working_dir $segment_store/${segment_id} \
 			$word_begin_index $word_end_index $time_begin $time_end $log_dir 2> $log_dir/err.log || (echo "Failed: make-status-and-word-timings.sh" && exit 1)
@@ -149,6 +156,8 @@ for x in `seq 1 $((num_iters-1))`;do
 		done < <(cat $working_dir/ALIGNMENT_STATUS | grep PENDING)
 	
 
+	
+
 	if [[ $(grep PENDING $working_dir/ALIGNMENT_STATUS) ]]; then
 		cp $working_dir/ALIGNMENT_STATUS $working_dir/ALIGNMENT_STATUS.iter$((x-1))
 		cat $working_dir/ALIGNMENT_STATUS | grep 'DONE' > $working_dir/ALIGNMENT_STATUS.tmp
@@ -156,9 +165,10 @@ for x in `seq 1 $((num_iters-1))`;do
 		cat $working_dir/ALIGNMENT_STATUS.tmp | sort -s -k 1,1n > $working_dir/ALIGNMENT_STATUS.tmp2
 		# clean up the alignment file so that ALIGNMENT_STATUS has DONE and PENDING in alternate lines
 		echo "Cleaning up Alignment Status" >> $log_dir/output.log
-		python scripts/cleanup_status_my.py $working_dir/ALIGNMENT_STATUS.tmp2 > $working_dir/ALIGNMENT_STATUS
+		python scripts/cleanup_status.py $working_dir/ALIGNMENT_STATUS.tmp2 > $working_dir/ALIGNMENT_STATUS
 		# rm $working_dir/ALIGNMENT_STATUS.tmp*
 		# rm $working_dir/ALIGNMENT_STATUS.working.iter${x} # might need for debugging
+		scripts/adapt_fmllr.sh $data_dir $working_dir $working_dir/adapted_model_$((x-1)) $x
 	else
 		echo "Finished successfully"
 	fi
@@ -178,3 +188,5 @@ if [ $create_dir == "true" ]; then
 	cut -d ' ' -f1 $new_dir/segments | sed "s/$/ $x/g" > $new_dir/utt2spk
 	cut -d ' ' -f1 $new_dir/segments | sed "s/^/$x /g" > $new_dir/spk2utt
 fi
+
+

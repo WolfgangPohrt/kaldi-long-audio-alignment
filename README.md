@@ -1,5 +1,4 @@
 # kaldi-long-audio-alignment
-Long audio alignment using Kaldi. This tool splits a long audio and the corresponding transcript into multiple segments such that the transcripts for smaller segment correspond to the small audio segment. It is useful in ASR training since the small segments take much lesser total time compared to using the entire audio at once.
 
 The algorithm is similar to the one in SAILALIGN toolkit (https://github.com/nassosoassos/sail_align).
 
@@ -26,7 +25,7 @@ Performs long audio alignment and optionally appends the segmented data to train
   
 	  --stage <stage>           # Use stage 2 to run the itterative algorith
   
-	  -create_dir (true|false) 		# create segmentd kaldi data directory from the input (defult: false)
+	  --create_dir (true|false) 		# create segmentd kaldi data directory from the input (defult: false)
 
 **Note:** Create path.sh and cmd.sh before running the script like in Kaldi recipe.
 
