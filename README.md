@@ -37,10 +37,4 @@ Now run the man script:
 
 **Note:** Create path.sh and cmd.sh and create soft links to **steps** and **utils** before running the script like in Kaldi recipe.
 
-**Note:** Iterations 0 to n-3 use trigram and iterations n-2 and n-1 are the two passes described in [2] but with a difference. the LM is built only on the exact text which corresponds to the segment rather than from a longer context hence larger deletions are still a problem.
-
-
-[1]: "A RECURSIVE ALGORITHM FOR THE FORCED ALIGNMENT OF VERY LONG AUDIO SEGMENTS"
-
-[2]: "A SYSTEM FOR AUTOMATIC ALIGNMENT OF BROADCAST MEDIA CAPTIONS USING WEIGHTED FINITE-STATE TRANSDUCERS"
 
