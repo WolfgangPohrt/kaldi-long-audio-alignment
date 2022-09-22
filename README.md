@@ -1,15 +1,3 @@
-# kaldi-long-audio-alignment
-
-The algorithm is similar to the one in SAILALIGN toolkit (https://github.com/nassosoassos/sail_align).
-
-Refer to "A RECURSIVE ALGORITHM FOR THE FORCED ALIGNMENT OF VERY LONG AUDIO SEGMENTS" and "A SYSTEM FOR AUTOMATIC ALIGNMENT OF BROADCAST MEDIA CAPTIONS USING WEIGHTED FINITE-STATE TRANSDUCERS" to get started.
-
-**License:** Apache License 2.0
-
-**Copyright:** Speech Lab (of [Prof. S Umesh](http://www.ee.iitm.ac.in/~umeshs/)), EE department, IIT Madras
-				
-
-
 <h2>Overview of the tool</h2>
 
 Performs long audio alignment and optionally appends the segmented data to train set.
