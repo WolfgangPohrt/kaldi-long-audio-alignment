@@ -44,8 +44,8 @@ Now run the man script:
 	  --stage <stage>           		# Use stage 2 to run the itterative algorith
   
 	  --create_dir (true|false) 		# Create segmented Kaldi data directory from the input (defult: false)	
-	  --use_nnet (true|false)			# Use nnet acousic model.
-										# If true specify <lang-dir>, <model-dir> and <iverctor-dir> in longaudio_vars.sh (default: false)
+	  --use_nnet (true|false)		# Use nnet acousic model.
+						# If true specify <lang-dir>, <model-dir> and <iverctor-dir> in longaudio_vars.sh (default: false)
 
 **Note:** Create path.sh and cmd.sh and create soft links to **steps** and **utils** before running the script like in Kaldi recipe.
 
