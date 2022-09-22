@@ -11,9 +11,9 @@ source $KALDI_ROOT/tools/config/common_path.sh
 
 echo "$0 $@"  # Print the command line for logging
 
-if [ $# != 4 ]; then
-  echo "Usage: scripts/build-graph-decode-hyp.sh <num_job> <decode-dir> <working-dir> <log-dir>"
-  echo " e.g.: scripts/build-graph-decode-hyp.sh 16 decode data/working_dir data/working_dir/log_dir"
+if [ $# != 5 ]; then
+  echo "Usage: scripts/build-graph-decode-hyp.sh <num_job> <decode-dir> <working-dir> <log-dir> <use-nnet>"
+  echo " e.g.: scripts/build-graph-decode-hyp.sh 16 decode data/working_dir data/working_dir/log_dir false"
   echo "Description: This script creates a decoding graph, performs decoding using decode_fmllr.sh, and matches hypothesis with reference text using SCLITE."
   exit 1;
 fi
@@ -24,6 +24,7 @@ nj=$1
 decode_dir=$2
 working_dir=$3
 log_dir=$4
+use_nnet=$5
 
 
 
@@ -32,7 +33,16 @@ rm -rf $model_dir/$decode_dir
 mkdir -p $model_dir/$decode_dir/scoring
 
 # steps/decode.sh --cmd "run.pl"  --nj $nj --skip-scoring true $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
-steps/decode_fmllr.sh --cmd "run.pl --mem 2G" --nj 1 --skip_scoring true $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
+if [ $use_nnet == "true" ]; then
+        steps/nnet3/decode.sh --acwt 1.0 --post-decode-acwt 10.0 \
+                --nj 1 --cmd "$decode_cmd" \
+                --skip-scoring true \
+                --online-ivector-dir $iverctor_dir \
+                $graph_dir $data_dir $model_dir/$decode_dir
+else
+        steps/decode_fmllr.sh --cmd "run.pl --mem 2G" --nj 1 --skip_scoring true $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
+fi
+
 
 (lattice-scale --inv-acoustic-scale=10 "ark:gunzip -c $model_dir/$decode_dir/lat.*.gz|" ark:- 2> $log_dir/err.log || exit 1)  | \
         (lattice-add-penalty --word-ins-penalty=10.0 ark:- ark:- 2> $log_dir/err.log || exit 1) | \

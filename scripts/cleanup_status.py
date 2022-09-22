@@ -1,24 +1,39 @@
-
-# Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
-
 import sys
-from classes.entry import Entry
-from classes.entry_manager import EntryManager
 
-status_file=sys.argv[1]
-with open(status_file,'r') as f:
-	status_file_contents=f.readlines()
+status_path = sys.argv[1]
 
-
+with open(status_path) as f:
+	status = f.readlines()
+	status = [ln.rstrip().split() for ln in  status]
 
 
+status_cleaned = []
+onset_time_curr = status[0][0]
+onset_curr = status[0][3]
+offset_time_curr = status[0][1]
+offset_curr = status[0][4]
+stat_cur = status[0][2]
 
-em=EntryManager()
-uniq_status_file = list(set(status_file_contents))
-uniq_status_file.sort(key=lambda x: float(x.split()[0]))
-# print(uniq_status_file)
-for l in uniq_status_file:
-	l = l.split()
-	em.add_entry(Entry(l[0],l[1],l[2],l[3],l[4]))
+for i, ln in enumerate(status[:-1]):
+	
+	onset_time, offset_time, stat, onset, offset = ln
+	onset_time_next, offset_time_next, stat_next, onset_next, offset_next = status[i+1]
+	if stat_next != stat_cur:
+		status_cleaned.append([onset_time_curr, offset_time_curr, stat_cur, onset_curr, offset_curr])
 
-em.print_entries()
+		onset_time_curr = onset_time_next
+		onset_curr = onset_next
+		offset_time_curr = offset_time_next
+		offset_curr = offset_next
+		stat_cur = stat_next
+ 
+	
+	else:
+		offset_time_curr = offset_time_next
+		offset_curr = offset_next
+
+
+for stat in status_cleaned:
+	print(' '.join(stat))
+	
+	
