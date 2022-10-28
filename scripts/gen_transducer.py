@@ -1,6 +1,4 @@
 
-# Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
-
 import sys
 import codecs
 import math
@@ -11,10 +9,7 @@ if(len(sys.argv)==3 and sys.argv[2]=='--include-skip'):
 with codecs.open(input_file_path,'r','utf-8') as f:
 	input_contents=f.readlines()
 
-
-# print(input_contents[0])
 words=input_contents[0].split(' ')
-# print(words)
 idx=1
 for w in words:
 	w=w.strip()
@@ -24,7 +19,6 @@ for w in words:
 	else:
 		print('{} {} {} {} {}'.format(idx-1, idx, w, w, math.log(0.9,10)))
 		print('{} {} {} {} {}'.format(idx-1, idx, '<eps>', '<eps>', math.log(0.1,10)))
-	print('{} {} {} {} {}'.format('0', idx, '<eps>', '<eps>', '0'))
-	print(idx)
 	idx+=1
+print(idx-1)
 

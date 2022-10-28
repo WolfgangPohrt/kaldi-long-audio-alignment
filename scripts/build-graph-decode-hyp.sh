@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
-
 set -x
 export KALDI_ROOT=/home/theokouz/kaldi/
 source $KALDI_ROOT/tools/config/common_path.sh

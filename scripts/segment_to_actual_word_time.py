@@ -1,9 +1,7 @@
 #!/usr/bin/python
-
-# Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
-
 import sys
 from classes.word_time_entry import WordTimeEntry
+"""
 # Inputs:
 #	a file with lines for each word in the actual text
 #	ctm file
@@ -12,7 +10,8 @@ from classes.word_time_entry import WordTimeEntry
 #	hyp_and_ref_match
 # Logic:
 #	assert number of lines in ref_hyp_match and hyp_ref_match are the same
-#	for each line in ref_hyp_match and hyp_ref_match, get the words \
+#	for each line in ref_hyp_match and hyp_ref_match, get the words 
+"""
 word_time_file=sys.argv[1]
 ctm_file=sys.argv[2]
 segments_file=sys.argv[3]
@@ -34,10 +33,8 @@ with open(ref_and_hyp_match_file) as f:
 
 with open(hyp_and_ref_match_file) as f:
         hyp_and_ref_match=f.readlines()
-
 word_time_list=[]
 segments_time_map=dict()
-
 for w in word_time:
 	word_time_list.append(WordTimeEntry(w))
 for s in segments:
@@ -45,16 +42,11 @@ for s in segments:
 	segments_time_map[s[0]]=s[2]
 # print(segments_time_map)
 assert len(ref_and_hyp_match)==len(hyp_and_ref_match)
-
 for k,l in zip(ref_and_hyp_match, hyp_and_ref_match):
-	
 	text_start, text_end = k.split(',')
 	text_start, text_end = int(text_start.replace('(','')), int(text_end.replace(')',''))
 	ctm_start, ctm_end = l.split(',')
 	ctm_start, ctm_end = int(ctm_start.replace('(','')), int(ctm_end.replace(')',''))
-	######## same deal as island_to_status ####
-	# text_start, text_end=map(int,k.split(' '))
-	# ctm_start, ctm_end=map(int, l.split(' '))
 	try:
 		assert ctm_end - ctm_start == text_end - text_start
 	except AssertionError:
@@ -62,7 +54,6 @@ for k,l in zip(ref_and_hyp_match, hyp_and_ref_match):
 		exit(1)
 	while text_start<=text_end:
 		ctm_segment, _, ctm_begin_time, ctm_duration, word=ctm[ctm_start].strip().split()
-		# print(ctm_begin_time)
 		entry = word_time_list[text_start+text_begin_offset]
 		try:
 			assert word == entry.word
@@ -73,7 +64,6 @@ for k,l in zip(ref_and_hyp_match, hyp_and_ref_match):
 			exit(1)
 		entry.begin_time=float(segments_time_map[ctm_segment])+float(ctm_begin_time)
 		entry.end_time=entry.begin_time+float(ctm_duration)
-		# print(entry.begin_time, entry.end_time)
 		text_start+=1
 		ctm_start+=1
 for e in word_time_list:

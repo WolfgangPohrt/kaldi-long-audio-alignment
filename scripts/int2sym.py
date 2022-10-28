@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-# Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
-
 import sys
 import codecs
 symtab=sys.argv[1]

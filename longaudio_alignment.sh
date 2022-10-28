@@ -64,12 +64,12 @@ scripts/make-feats.sh $data_dir/wav.scp $working_dir $log_dir $use_nnet 2> $log_
 # VAD and segmentation based on VAD
 echo "Doing VAD"
 
-# This uses SailAlign's VAD
-./bin/vad -i $audio -m bin/MattModel.bin -o $working_dir/vad.tmp 2> $log_dir/err.log || exit 1
-awk '{print $2}' $working_dir/vad.tmp | tr -d '\n' > $working_dir/vad.ark 
+# # This uses SailAlign's VAD
+# ./bin/vad -i $audio -m bin/MattModel.bin -o $working_dir/vad.tmp 2> $log_dir/err.log || exit 1
+# awk '{print $2}' $working_dir/vad.tmp | tr -d '\n' > $working_dir/vad.ark 
 
 # This uses Kaldi's VAD.
-# (compute-vad scp:$data_dir/feats.scp ark,t:- 2> $log_dir/err.log || exit 1) | cut -d' ' -f2- | tr -d ' '|tr -d '[' | tr -d ']'  > $working_dir/vad.ark || exit 1
+(compute-vad scp:$data_dir/feats.scp ark,t:- 2> $log_dir/err.log || exit 1) | cut -d' ' -f2- | tr -d ' '|tr -d '[' | tr -d ']'  > $working_dir/vad.ark || exit 1
 
 echo "Making segments using VAD"
 # split_vad.py considers even one frame of 0 (silence) as potential breakpoint. But you might want to change it
@@ -151,23 +151,13 @@ for x in `seq 1 $((num_iters-1))`;do
 		scripts/make-status-and-word-timings.sh $working_dir $segment_store/${segment_id} \
 			$word_begin_index $word_end_index $time_begin $time_end $log_dir 2> $log_dir/err.log || (echo "Failed: make-status-and-word-timings.sh" && exit 1)
 
-		cat $segment_store/${segment_id}/ALIGNMENT_STATUS >> $working_dir/ALIGNMENT_STATUS.working.iter${x} # this file is appended with ALIGNMENT_STATUS of each segment of the iteration.
-		segment_id=$((segment_id+1))
+		segment_id=${time_begin}_${time_end}
 		done < <(cat $working_dir/ALIGNMENT_STATUS | grep PENDING)
 	
 
-	
+	python3 scripts/anchor_to_status.py $working_dir/WORD_TIMINGS > $working_dir/ALIGNMENT_STATUS
 
 	if [[ $(grep PENDING $working_dir/ALIGNMENT_STATUS) ]]; then
-		cp $working_dir/ALIGNMENT_STATUS $working_dir/ALIGNMENT_STATUS.iter$((x-1))
-		cat $working_dir/ALIGNMENT_STATUS | grep 'DONE' > $working_dir/ALIGNMENT_STATUS.tmp
-		cat $working_dir/ALIGNMENT_STATUS.working.iter${x} >> $working_dir/ALIGNMENT_STATUS.tmp
-		cat $working_dir/ALIGNMENT_STATUS.tmp | sort -s -k 1,1n > $working_dir/ALIGNMENT_STATUS.tmp2
-		# clean up the alignment file so that ALIGNMENT_STATUS has DONE and PENDING in alternate lines
-		echo "Cleaning up Alignment Status" >> $log_dir/output.log
-		python scripts/cleanup_status.py $working_dir/ALIGNMENT_STATUS.tmp2 > $working_dir/ALIGNMENT_STATUS
-		# rm $working_dir/ALIGNMENT_STATUS.tmp*
-		# rm $working_dir/ALIGNMENT_STATUS.working.iter${x} # might need for debugging
 		scripts/adapt_fmllr.sh $data_dir $working_dir $working_dir/adapted_model_$((x-1)) $x
 	else
 		echo "Finished successfully"
