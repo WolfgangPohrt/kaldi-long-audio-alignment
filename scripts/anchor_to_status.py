@@ -1,6 +1,7 @@
 import sys
 
 word_ali_path = sys.argv[1]
+audio_duration = sys.argv[2]
 
 with open(word_ali_path) as f:
     word_ali = f.readlines()
@@ -32,6 +33,6 @@ for i, w_ali, in enumerate(word_ali[1:]):
         onset_stat = i + 1
         stat = 'PENDING'
         onset_time_stat = word_ali[i][2]
-ali_stat.append([onset_time_stat, word_ali[i+1][2], stat, onset_stat, i+1])
+ali_stat.append([onset_time_stat, audio_duration, stat, onset_stat, i+1])
 for stat in ali_stat:
     print('{} {} {} {} {}'.format(*stat))

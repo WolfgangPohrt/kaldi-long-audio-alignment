@@ -21,13 +21,13 @@ fi
 
 
 
+data_dir=`dirname $source_file`;
 
 cut -d' ' -f1<$source_file > $working_dir/utt 2> $log_dir/err.log
 paste $working_dir/utt $working_dir/utt | sort > $data_dir/utt2spk
 cp $data_dir/utt2spk $data_dir/spk2utt  
 rm $working_dir/utt
 (rm $data_dir/feats.scp $data_dir/cmvn.scp || echo "") >> $log_dir/output.log 2>&1
-
 
 if [ $use_nnet == "true" ]; then 
     mfcc_config=conf/mfcc_hires.conf

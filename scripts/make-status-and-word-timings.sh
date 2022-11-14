@@ -4,32 +4,39 @@ set -x
 
 echo "$0 $@"  # Print the command line for logging
 
-if [ $# != 7 ]; then
-  echo "Usage: scripts/make-status-and-word-timings.sh <main-working-dir> <working-dir> <text-begin-index> <text-end-index> <audio-begin-index> <audio-end-index> <log-dir>"
-  echo " e.g.: scripts/make-status-and-word-timings.sh data/working_dir data/working_dir/segments_store/1 0 5 0 13.12 data/working_dir/log"
+if [ $# != 2 ]; then
+  echo "Usage: scripts/make-status-and-word-timings.sh <main-working-dir> <log-dir>"
+  echo " e.g.: scripts/make-status-and-word-timings.sh data/working_dir data/working_dir/log"
   echo "Description: This script updates the alignment and saves it to <working-dir>/WORD_ALIGNMENT"
   exit 1;
 fi
 
 
 main_working_dir=$1
-working_dir=$2
-text_begin_index=$3
-text_end_index=$4
-audio_begin_time=$5
-audio_end_time=$6
-log_dir=$7
-# save timing information for each aligned word
-echo "Creating word timing" >> $log_dir/output.log
-cp $main_working_dir/WORD_TIMINGS $main_working_dir/WORD_TIMINGS.tmp
-cp  $main_working_dir/WORD_TIMINGS  $working_dir/WORD_TIMINGS.before
-python scripts/segment_to_actual_word_time.py $main_working_dir/WORD_TIMINGS.tmp $working_dir/word_alignment.ctm $working_dir/segments $working_dir/ref_and_hyp_match $working_dir/hyp_and_ref_match $text_begin_index > $main_working_dir/WORD_TIMINGS
-# rm $main_working_dir/WORD_TIMINGS.tmp
+log_dir=$2
+segment_store=$main_working_dir/segments_store
+
+while read y;do
+  echo $y >> $log_dir/output.log
+  time_begin="`echo $y | cut -d' ' -f1`"
+  time_end="`echo $y | cut -d' ' -f2`"
+  segment_id=${time_begin}_${time_end}
+  local_data_dir=$segment_store/${segment_id}/data_dir
+  word_begin_index=`echo $y | cut -d' ' -f4 `
+  word_begin_index=$((word_begin_index+1))
+  word_end_index=`echo $y | cut -d' ' -f5`
+  word_end_index=$((word_end_index+1))
+  word_string=`cat $working_dir/text_actual | cut -d' ' -f $word_begin_index-$word_end_index`
+  word_begin_index=$((word_begin_index-1))
+  word_end_index=$((word_end_index-1))
+  echo "<s> $word_string </s>" > $segment_store/${segment_id}/lm_text
+  echo "$word_string" > $segment_store/${segment_id}/text_actual
+  working_dir=$segment_store/$segment_id
+  lang_dir=$working_dir/lang_dir
+  echo "Creating word timing" >> $log_dir/output.log
+  cp $main_working_dir/WORD_TIMINGS $main_working_dir/WORD_TIMINGS.tmp
+  cp  $main_working_dir/WORD_TIMINGS  $working_dir/WORD_TIMINGS.before
+
+  python scripts/segment_to_actual_word_time.py $main_working_dir/WORD_TIMINGS.tmp $working_dir/word_alignment.ctm $working_dir/segments $working_dir/ref_and_hyp_match $working_dir/hyp_and_ref_match $word_begin_index > $main_working_dir/WORD_TIMINGS
 cp  $main_working_dir/WORD_TIMINGS  $working_dir/WORD_TIMINGS.after
-python3 scripts/sanity_check.py $main_working_dir/WORD_TIMINGS  >  $main_working_dir/sanity.tmp
-
-if [[ $(cat $main_working_dir/sanity.tmp) ]]; then
-        utils/int2sym.pl -f 4 lang/words.txt $main_working_dir/sanity.tmp 
-        exit 1;
-fi
-
+done < <(cat $main_working_dir/ALIGNMENT_STATUS | grep PENDING)

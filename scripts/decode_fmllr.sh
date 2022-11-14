@@ -54,7 +54,7 @@ set -x
 [ -f ./path.sh ] && . ./path.sh; # source the path.
 . parse_options.sh || exit 1;
 
-if [ $# != 3 ]; then
+if [ $# != 4 ]; then
    echo "Wrong #arguments ($#, expected 3)"
    echo "Usage: steps/decode_fmllr.sh [options] <graph-dir> <data-dir> <decode-dir>"
    echo " e.g.: steps/decode_fmllr.sh exp/tri2b/graph_tgpr data/test_dev93 exp/tri2b/decode_dev93_tgpr"
@@ -79,7 +79,8 @@ graphdir=$1
 data=$2
 dir=`echo $3 | sed 's:/$::g'` # remove any trailing slash.
 
-srcdir=`dirname $dir`; # Assume model directory one level up from decoding directory.
+# srcdir=`dirname $dir`; # Assume model directory one level up from decoding directory.
+srcdir=$4
 sdata=$data/split$nj;
 
 thread_string=

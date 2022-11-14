@@ -9,7 +9,7 @@ source $KALDI_ROOT/tools/config/common_path.sh
 
 echo "$0 $@"  # Print the command line for logging
 
-if [ $# != 6 ]; then
+if [ $# != 7 ]; then
   echo "Usage: scripts/build-graph-decode-hyp.sh <num_job> <decode-dir> <working-dir> <model-dir> <log-dir> <use-nnet>"
   echo " e.g.: scripts/build-graph-decode-hyp.sh 16 decode data/working_dir exp/tri3b data/working_dir/log_dir false"
   echo "Description: This script creates a decoding graph, performs decoding using decode_fmllr.sh, and matches hypothesis with reference text using SCLITE."
@@ -24,7 +24,9 @@ working_dir=$3
 model_dir=$4
 log_dir=$5
 use_nnet=$6
-
+data_dir=$7
+lang_dir=$working_dir/lang_dir
+graph_dir=$working_dir/graph_dir
 
 utils/mkgraph.sh $lang_dir $model_dir $graph_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
 rm -rf $model_dir/$decode_dir
@@ -38,7 +40,7 @@ if [ $use_nnet == "true" ]; then
                 --online-ivector-dir $iverctor_dir \
                 $graph_dir $data_dir $model_dir/$decode_dir
 else
-        scripts/decode_fmllr.sh --cmd "run.pl --mem 2G" --nj 1 --skip_scoring true $graph_dir $data_dir $model_dir/$decode_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
+        scripts/decode_fmllr.sh --cmd "run.pl --mem 2G" --nj 1 --skip_scoring true $graph_dir $data_dir $model_dir/$decode_dir $model_dir >> $log_dir/output.log 2> $log_dir/err.log || exit 1
 fi
 
 
@@ -54,12 +56,22 @@ fi
 (lattice-align-words $lang_dir/phones/word_boundary.int $model_dir/final.mdl ark:- ark:- 2> $log_dir/err.log || exit 1) | \
 (nbest-to-ctm ark:- - 2> $log_dir/err.log || exit 1) | sed 's/segment_//g' | sort -s -k 1,1n | sed 's/^/segment_/g' > $working_dir/word_alignment.ctm
 
+./utils/int2sym.pl $lang_dir/words.txt $working_dir/hypothesis.tra > $working_dir/hypothesis.words
+
+sed 's/$/ (key_1)\n/' $working_dir/hypothesis.words | tr -s ' ' > $working_dir/hypothesis.words_rm
+sed 's/$/ (key_1)\n/' $working_dir/text_actual | tr -s ' ' > $working_dir/text_actual_rm
+
 # note: multiple spaces before key makes sclite fail and number of lines should match 
-(cat $working_dir/hypothesis.tra 2> $log_dir/err.log || exit 1) | sed 's/$/ (key_1)\n/' | tr -s ' '> $working_dir/hypothesis.tra_rm
-(cat $working_dir/text_ints 2> $log_dir/err.log || exit 1) | sed 's/$/ (key_1)\n/' | tr -s ' ' > $working_dir/text_ints_rm
+# (cat $working_dir/hypothesis.tra 2> $log_dir/err.log || exit 1) | sed 's/$/ (key_1)\n/' | tr -s ' '> $working_dir/hypothesis.tra_rm
+# (cat $working_dir/text_ints 2> $log_dir/err.log || exit 1) | sed 's/$/ (key_1)\n/' | tr -s ' ' > $working_dir/text_ints_rm
 #echo "Text-Text alignment using sclite"
-sclite -p -i 'rm' -r $working_dir/text_ints_rm -h $working_dir/hypothesis.tra_rm > $working_dir/ref_and_hyp 2> $log_dir/err.log || (echo "sclite failure" && exit 1)
-sclite -p -i 'rm' -r $working_dir/hypothesis.tra_rm -h $working_dir/text_ints_rm > $working_dir/hyp_and_ref 2> $log_dir/err.log || (echo "sclite failure" && exit 1)
+# sclite -p -i 'rm' -r $working_dir/text_ints_rm -h $working_dir/hypothesis.tra_rm > $working_dir/ref_and_hyp 2> $log_dir/err.log || (echo "sclite failure" && exit 1)
+# sclite -p -i 'rm' -r $working_dir/hypothesis.tra_rm -h $working_dir/text_ints_rm > $working_dir/hyp_and_ref 2> $log_dir/err.log || (echo "sclite failure" && exit 1)
+
+sclite -p -i 'rm' -r $working_dir/text_actual_rm -h $working_dir/hypothesis.words_rm > $working_dir/ref_and_hyp 2> $log_dir/err.log || (echo "sclite failure" && exit 1)
+sclite -p -i 'rm' -r $working_dir/hypothesis.words_rm -h $working_dir/text_actual_rm > $working_dir/hyp_and_ref 2> $log_dir/err.log || (echo "sclite failure" && exit 1)
+
+
 
 # clean up ref_and_hyp & hyp_and_ref to have only C,I,D,S characters
 (cat $working_dir/ref_and_hyp 2> $log_dir/err.log || exit 1) | sed '/[<"]/d' | sed '/^\n/d' | tr '\n' ' ' | sed 's/ //g'  \

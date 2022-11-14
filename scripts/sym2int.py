@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-# Copyright 2017  Speech Lab, EE Dept., IITM (Author: Srinivas Venkattaramanujam)
 
 import sys
 import codecs
@@ -31,7 +30,12 @@ for line in input_contents:
 		word=word.strip()
 		if len(word) == 0:
 			continue
-		out_str=out_str+u' '+sym2int_dict[word]
+		if word not in sym2int_dict and '<UNK>' in sym2int_dict:
+			out_str=out_str+u' '+sym2int_dict['<UNK>']
+		elif word not in sym2int_dict and '<unk>' in sym2int_dict:
+			out_str=out_str+u' '+sym2int_dict['<unk>']
+		else:
+			out_str=out_str+u' '+sym2int_dict[word]
 	output_contents.append(out_str)
 
 for line in output_contents:
