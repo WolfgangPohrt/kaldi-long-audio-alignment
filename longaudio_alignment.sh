@@ -109,8 +109,9 @@ echo "iter 0 decode over"
 num_text_words=`wc -w $working_dir/text_ints | cut -d' ' -f1`
 text_end_index=$((num_text_words-1))
 audio_duration=`(wav-to-duration --read-entire-file scp:$data_dir/wav.scp ark,t:- 2>> $log_dir/output.log) | cut -d' ' -f2`
-scripts/make-status-and-word-timings.sh $working_dir $working_dir 0 $text_end_index 0.00 $audio_duration $log_dir 2> $log_dir/err.log 
 python3 scripts/anchor_to_status.py $working_dir/WORD_TIMINGS $audio_duration > $working_dir/ALIGNMENT_STATUS
+
+scripts/make-status-and-word-timings.sh $working_dir $log_dir 0 2> $log_dir/err.log 
 
 cp -r $model_dir $working_dir/adapted_model_0
 
@@ -129,7 +130,7 @@ for x in `seq 1 $((num_iters-1))`;do
 	done < <(cat $working_dir/ALIGNMENT_STATUS | grep PENDING)
 	wait
 
-	scripts/make-status-and-word-timings.sh $working_dir $log_dir
+	scripts/make-status-and-word-timings.sh $working_dir $log_dir 1
 	python3 scripts/anchor_to_status.py $working_dir/WORD_TIMINGS $audio_duration > $working_dir/ALIGNMENT_STATUS
 
 	if [[ $(grep PENDING $working_dir/ALIGNMENT_STATUS) ]]; then
